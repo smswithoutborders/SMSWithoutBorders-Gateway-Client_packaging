@@ -1,115 +1,177 @@
 #!/bin/bash
 
-while getopts 'v:h' flag 
+while getopts 'v:b:r:h' flag 
 do
     case "${flag}" in
         v) 
             version=${OPTARG}
             ;;
+        b) 
+            release_branch=${OPTARG}
+            ;;
+        r) 
+            release=${OPTARG}
+            ;;
         h)
-            echo "script usage: ./build [-v]"
+            echo "script usage: ./build [-v] [-r]"
             exit 1
             ;;
         \?)
-            echo "script usage: ./build [-v]" >&2
+            echo "script usage: ./build [-v] [-r]" >&2
             exit 1
             ;;
     esac
 done
 
-if [[ $version == "" ]]
-then
-    echo "script usage: ./build [-v]"
-    exit 1
-fi
+# make_control_file $BUILD_DIR $package $maintainer $description $version $release $size
+make_control_file() {
+    echo "[!] creating control file in ${1}/DEBIAN ..." 
 
-package="swob-gateway-client"
-release="1"
-maintainer="Afkanerd <developers@smswithoutborders.com>"
-description="smswithoutborders gateway client"
-
-BUILD_DIR="${package}_${version}-${release}"
-INSTALL_DIR="${BUILD_DIR}/usr/share/${BUILD_DIR}"
-
-repository="https://github.com/smswithoutborders/SMSWithoutBorders-Gateway-Client.git"
-release_branch="alpha"
-size="48000"
-
-echo "[!] creating build directory ${BUILD_DIR} ..." 
-mkdir $BUILD_DIR && \
-echo "[+] success" 
-
-#logger
-LOG_FILE=$BUILD_DIR/build.log
-exec > >(tee -a ${LOG_FILE}) 2>&1
-
-# create build directory
-echo "[!] creating installation directory ${INSTALL_DIR} ..." 
-mkdir -p $INSTALL_DIR && \
-echo "[+] success" 
-
-# clone project
-echo "[!] cloning ${repository} ..." 
-echo "[!] this may take a while please wait ..." 
-git clone $repository $INSTALL_DIR --branch $release_branch && \
-echo "[+] success" 
-
-# create DEBIAN files
-echo "[!] creating DEBIAN directory in ${BUILD_DIR} ..." 
-mkdir -p $BUILD_DIR/DEBIAN && \
-echo "[+] success" 
-
-# create control file
-echo "[!] creating control file in ${BUILD_DIR}/DEBIAN ..." 
-
-echo "Package: ${package}
-Version: ${version}-${release}
+    echo "Package: ${2}
+Version: ${5}-${6}
 Priority: optional
 Architecture: all
 Depends: python3
-Installed-Size: $size
-Maintainer: $maintainer
-Description: $description" > $BUILD_DIR/DEBIAN/control && \
-echo "[+] success" 
+Installed-Size: $7
+Maintainer: $3
+Description: $4" > $1/DEBIAN/control
+    check_err
+    echo "[+] success" 
 
-# create postinst file
-echo "[!] creating postinst file in ${BUILD_DIR}/DEBIAN ..." 
+    return 0
+}
 
-echo "#!/bin/bash
+# make_postinst_file $BUILD_DIR $package
+make_postinst_file() {
+    echo "[!] creating postinst file in ${1}/DEBIAN ..." 
 
-cd usr/share/${BUILD_DIR}
+    echo "#!/bin/bash
+
+cd usr/share/${1}
 make 
 make install
 make start
 make enable
-echo \"Successfully installed ${package}\"" > $BUILD_DIR/DEBIAN/postinst && \
-echo "[+] success" 
+echo \"Successfully installed ${2}\"" > $1/DEBIAN/postinst
+    check_err
+    echo "[+] success"
 
-# create prerm file
-echo "[!] creating prerm file in ${BUILD_DIR}/DEBIAN ..." 
+    return 0
+}
 
-echo "#!/bin/bash
+# make_prerm_file $BUILD_DIR $package
+make_prerm_file() {
+    echo "[!] creating prerm file in ${1}/DEBIAN ..." 
 
-cd usr/share/${BUILD_DIR}
+    echo "#!/bin/bash
+
+cd usr/share/${1}
 make fuckit
 rm -rf src/
 rm -rf .git/
 rm -rf .configs/
 rm -rf third_party/
 rm -rf venv/
-echo \"Successfully removed ${package}\"" > $BUILD_DIR/DEBIAN/prerm && \
-echo "[+] success" 
+echo \"Successfully removed ${2}\"" > $1/DEBIAN/prerm
+    check_err
+    echo "[+] success" 
+}
 
-# change scripts permissions to 0755
-echo "[!] changing postinst file permissions to 0755 ..." 
-chmod 0755 $BUILD_DIR/DEBIAN/postinst && \
-echo "[+] success" 
+# clone_project $repository $release_branch $INSTALL_DIR $BUILD_DIR
+clone_project() {
+    echo "[!] cloning ${1} ..."
+    echo "[!] release branch = ${2}" 
+    echo "[!] this may take a while please wait ..." 
+    git clone $1 $3 --branch $2
+    check_err
+    echo "[+] success" 
 
-echo "[!] changing prerm file permissions to 0755 ..." 
-chmod 0755 $BUILD_DIR/DEBIAN/prerm && \
-echo "[+] success" 
+    # create DEBIAN files
+    echo "[!] creating DEBIAN directory in ${4} ..." 
+    mkdir -p $4/DEBIAN
+    check_err
+    echo "[+] success" 
 
-# build .deb format
-echo "[!] building ${BUILD_DIR}.deb file in ${PWD} ..." 
-dpkg-deb --build $BUILD_DIR && \
-echo "[+] success" 
+    return 0
+}
+
+# check_err
+check_err() {
+    if [ $? -ne 0 ]
+    then
+        echo "[-] Build failed check build logs"
+        exit 1
+    fi
+}
+
+main() {
+    if [[ $version == "" ]]
+    then
+        echo "script usage: ./build [-v] [-r]"
+        exit 1
+    elif [[ $release == "" ]]
+    then
+        echo "script usage: ./build [-v] [-r]"
+        exit 1
+    elif [[ $release_branch == "" ]]
+    then
+        release_branch = "master"
+    fi
+
+    package="swob-gateway-client"
+    maintainer="Afkanerd <developers@smswithoutborders.com>"
+    description="SMSWithoutBorders Gateway Client is a linux SMS management Gateway
+ SMSWithoutBorders Gateway Client is a linux SMS management Gateway. It can both receive and send out SMS messages using the Linux ModemManager utilities. It is aimed at being a complete toolset of everything SMS linux. It functions best with USB 2G/3G Modems"
+
+    BUILD_DIR="${package}_${version}-${release}"
+    INSTALL_DIR="${BUILD_DIR}/usr/share/${BUILD_DIR}"
+
+    repository="https://github.com/smswithoutborders/SMSWithoutBorders-Gateway-Client.git"
+    size="48000"
+
+    echo "[!] creating build directory ${BUILD_DIR} ..." 
+    mkdir $BUILD_DIR
+    check_err
+    echo "[+] success" 
+
+    #logger
+    LOG_FILE=$BUILD_DIR/build.log
+    exec > >(tee -a ${LOG_FILE}) 2>&1
+
+    # create build directory
+    echo "[!] creating installation directory ${INSTALL_DIR} ..." 
+    mkdir -p $INSTALL_DIR
+    check_err
+    echo "[+] success" 
+
+    # clone project
+    clone_project $repository $release_branch $INSTALL_DIR $BUILD_DIR
+
+    # create control file
+    make_control_file $BUILD_DIR $package $maintainer $description $version $release $size
+
+    # create postinst file
+    make_postinst_file $BUILD_DIR $package
+
+    # create prerm file
+    make_prerm_file $BUILD_DIR $package
+
+    # change scripts permissions to 0755
+    echo "[!] changing postinst file permissions to 0755 ..." 
+    chmod 0755 $BUILD_DIR/DEBIAN/postinst
+    check_err
+    echo "[+] success" 
+
+    echo "[!] changing prerm file permissions to 0755 ..." 
+    chmod 0755 $BUILD_DIR/DEBIAN/prerm
+    check_err
+    echo "[+] success" 
+
+    # build .deb format
+    echo "[!] building .deb file in ${PWD} ..." 
+    dpkg-deb --build $BUILD_DIR .
+    check_err
+    echo "[+] success" 
+}
+
+main
