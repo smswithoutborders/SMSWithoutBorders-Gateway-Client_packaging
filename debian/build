@@ -23,7 +23,7 @@ do
     esac
 done
 
-# make_control_file $BUILD_DIR $package $maintainer $description $version $release $size
+# make_control_file $BUILD_DIR $package "${maintainer}" "${description}" $version $release $size
 make_control_file() {
     echo "[!] creating control file in ${1}/DEBIAN ..." 
 
@@ -47,6 +47,9 @@ make_postinst_file() {
 
     echo "#!/bin/bash
 
+set -e
+
+chown -R root:root usr/share/${1}
 cd usr/share/${1}
 make 
 make install
@@ -65,12 +68,15 @@ make_prerm_file() {
 
     echo "#!/bin/bash
 
+set -e
+
 cd usr/share/${1}
-make fuckit
+make clear
+make remove
+make clean
+make clear_ledger
 rm -rf src/
-rm -rf .git/
 rm -rf .configs/
-rm -rf third_party/
 rm -rf venv/
 echo \"Successfully removed ${2}\"" > $1/DEBIAN/prerm
     check_err
@@ -135,7 +141,7 @@ main() {
     echo "[+] success" 
 
     #logger
-    LOG_FILE=$BUILD_DIR/build.log
+    LOG_FILE=$BUILD_DIR.build.log
     exec > >(tee -a ${LOG_FILE}) 2>&1
 
     # create build directory
@@ -148,7 +154,7 @@ main() {
     clone_project $repository $release_branch $INSTALL_DIR $BUILD_DIR
 
     # create control file
-    make_control_file $BUILD_DIR $package $maintainer $description $version $release $size
+    make_control_file $BUILD_DIR $package "${maintainer}" "${description}" $version $release $size
 
     # create postinst file
     make_postinst_file $BUILD_DIR $package
@@ -157,13 +163,18 @@ main() {
     make_prerm_file $BUILD_DIR $package
 
     # change scripts permissions to 0755
-    echo "[!] changing postinst file permissions to 0755 ..." 
+    echo "[!] changing $BUILD_DIR/DEBIAN/postinst permissions to 0755 ..." 
     chmod 0755 $BUILD_DIR/DEBIAN/postinst
     check_err
     echo "[+] success" 
 
-    echo "[!] changing prerm file permissions to 0755 ..." 
+    echo "[!] changing $BUILD_DIR/DEBIAN/prerm permissions to 0755 ..." 
     chmod 0755 $BUILD_DIR/DEBIAN/prerm
+    check_err
+    echo "[+] success" 
+
+    echo "[!] changing $INSTALL_DIR permissions to 0755 ..." 
+    chmod -R 0755 $INSTALL_DIR
     check_err
     echo "[+] success" 
 
