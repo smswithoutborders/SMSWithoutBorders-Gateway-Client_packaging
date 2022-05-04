@@ -1,4 +1,8 @@
 ## SMSWithoutBorders Gateway Client Packaging
+For distribution of Gateway-Client in systems such as the Raspberry-Pi and others, having instable packages makes the job easier.
+
+The packaging currently builds for:
+- Debian (.deb)
 
 ### Dependencies
 
