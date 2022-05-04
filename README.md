@@ -1,7 +1,9 @@
 ## SMSWithoutBorders Gateway Client Packaging
+
 For distribution of Gateway-Client in systems such as the Raspberry-Pi and others, having instable packages makes the job easier.
 
 The packaging currently builds for:
+
 - Debian (.deb)
 
 ### Dependencies
@@ -50,6 +52,12 @@ sudo apt install debhelper
 
 ### Usage
 
+Debian
+
+```bash
+cd debian
+```
+
 ```bash
 ./build -v [version number] -r [release number] -b [release branch]
 ```
@@ -57,3 +65,19 @@ sudo apt install debhelper
 ### Logs
 
 Build logs are found in the root directory in the form `{package_name}_{version_number}-{release_number}.build.log`
+
+### Installation
+
+Install `.deb` on ubuntu
+
+with dpkg
+
+```bash
+sudo dpkg -i package_name.deb
+```
+
+with apt
+
+```bash
+sudo apt install ./package_name.deb
+```
