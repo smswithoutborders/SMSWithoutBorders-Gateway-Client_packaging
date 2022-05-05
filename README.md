@@ -42,9 +42,9 @@ sudo apt install debhelper
 
 ### Flags
 
-`-v` = Package version (float)
+`-v` = Package version
 
-`-r` = Package release number (integer)
+`-r` = Package release number
 
 `-b` = Upstream release branch. Default (master)
 

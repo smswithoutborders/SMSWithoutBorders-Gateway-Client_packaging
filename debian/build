@@ -13,11 +13,21 @@ do
             release=${OPTARG}
             ;;
         h)
-            echo "script usage: ./build [-v] [-r]"
+            echo "Usage: ./build [-v] [-b] [-r] [-h]"
+            echo ""
+            echo "-v = Package version"
+            echo "-r = Package release number"
+            echo "-b = Upstream release branch. Default (master)"
+            echo "-h = help"
             exit 1
             ;;
         \?)
-            echo "script usage: ./build [-v] [-r]" >&2
+            echo "Usage: ./build [-v] [-b] [-r] [-h]"
+            echo ""
+            echo "-v = Package version"
+            echo "-r = Package release number"
+            echo "-b = Upstream release branch. Default (master)"
+            echo "-h = help"
             exit 1
             ;;
     esac
@@ -113,11 +123,21 @@ check_err() {
 main() {
     if [[ $version == "" ]]
     then
-        echo "script usage: ./build [-v] [-r]"
+        echo "Usage: ./build [-v] [-b] [-r] [-h]"
+        echo ""
+        echo "-v = Package version"
+        echo "-r = Package release number"
+        echo "-b = Upstream release branch. Default (master)"
+        echo "-h = help"
         exit 1
     elif [[ $release == "" ]]
     then
-        echo "script usage: ./build [-v] [-r]"
+        echo "Usage: ./build [-v] [-b] [-r] [-h]"
+        echo ""
+        echo "-v = Package version"
+        echo "-r = Package release number"
+        echo "-b = Upstream release branch. Default (master)"
+        echo "-h = help"
         exit 1
     elif [[ $release_branch == "" ]]
     then
